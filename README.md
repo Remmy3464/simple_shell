@@ -158,5 +158,5 @@ vagrant:simple_shell$
 For a list of resources and commands used, refer to [LINKS.md](LINKS.md)
 
 ## Authors
-* **Adesanmi Adesanmi** [gmail](http://ianxaunliu-johnston.com) || [Twitter](https://twitter.com/Concativerse)
-* **Lawal Azeez Tosin** [gmail](https://www.linkedin.com/in/dknoppers) || [Twitter](https://twitter.com/dxknoppers)
+* **Adesanmi Adesanmi** [gmail](adesanmiaderemi@gmail.com)
+* **Lawal Azeez Tosin** [gmail](abdulazeezlawal236@gmail.com)
