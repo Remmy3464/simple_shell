@@ -1,74 +1,23 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#define BUFSIZE 1024
-/**
-  * struct environ_path - linked list from PATH
-  * @path: path in the format /usr/bin
-  * @len: length of the string
-  * @next: points to the next node
-  */
-typedef struct environ_path
-{
-	char *str;
-	unsigned int len;
-	struct environ_path *next;
-} env_path_t;
-/**
-  * add_node - adds a new node to the end of a linked list
-  * @head: head of the linked list
-  * @str: string
-  * @len: length of the string
-  * Return: pointer to the current position in the list
-  **/
-env_path_t *add_node(env_path_t **head, char *str, unsigned int len)
-{
-	env_path_t *new, *walk;
-	char *dupstr;
-
-	if (str == NULL)
-		return (NULL);
-	dupstr = strdup(str);
-	if (dupstr == NULL)
-		return (NULL);
-	new = malloc(sizeof(env_path_t));
-	if (new == NULL)
-		return (NULL);
-	new->str = dupstr;
-	new->len = len;
-	new->next = NULL;
-
-	if (*head == NULL)
-	{
-		*head = new;
-		return (*head);
-	}
-	walk = *head;
-	while (walk->next != NULL)
-		walk = walk->next;
-	walk->next = new;
-	return (*head);
-}
+#include "shell.h"
 /**
   * list_from_path - builds a linked list from PATH
   * Return: pointer to linked list
   */
-env_path_t *list_from_path(void)
+env_t *list_from_path(void)
 {
 	unsigned int len, i, j;
 	char *env;
 	char buffer[BUFSIZE];
-	env_path_t *ep;
+	env_t *ep;
 
 	ep = NULL;
 	len = i = j = 0;
-	env = getenv("PATH");
+	env = _getenv("PATH");
 	while (*env)
 	{
 		buffer[j++] = *env;
 		len++;
-		if(*env == ':')
+		if (*env == ':')
 		{
 			len--;
 			buffer[j - 1] = '/';
@@ -81,69 +30,60 @@ env_path_t *list_from_path(void)
 	return (ep);
 }
 /**
-  * print_list - prints a linked list
-  * @h: linked list to print
-  * Return: length of linked list
- (*
-  * used for debugging linked lists.
+  * environ_linked_list - builds a linked list from PATH
+  * Return: pointer to linked list
   */
-size_t print_list(const env_path_t *h)
+env_t *environ_linked_list(void)
 {
-	size_t i;
+	int i, j;
+	char **env;
+	env_t *ep;
 
-	for (i = 0; h; i++)
+	ep = NULL;
+	i = j = 0;
+	env = environ;
+	while (env[i])
 	{
-		printf("[%d] %s\n", h->len, h->str);
-		h = h->next;
+		add_node(&ep, env[i], (unsigned int)_strlen(env[i]));
+		i++;
 	}
-	return (i);
-}
-char *search_os(char *cmd)
-{
-	char *abs_path;
-	env_path_t *ep;
-
-	ep = list_from_path();
-	if (ep == NULL)
-		perror("List empty.\n"), exit(99);
-	/*
-	print_list(ep);
-	*/
-
-	while (ep)
-	{
-		abs_path = strdup(ep->str);
-		abs_path = strcat(abs_path, cmd);
-		/*
-		printf("abs_path: %s\n", abs_path);
-		*/
-		if (access(abs_path, F_OK | X_OK) == 0)
-		{
-			/*
-			printf("found it\n");
-			*/
-			return(abs_path);
-		}
-		ep = ep->next;
-	}
-	/*
-	printf("Didn't find it\n");
-	*/
-	return (NULL);
+	return (ep);
 }
 /**
-  * main - Entry point
-  * Return: 0 on success
+  * search_os - search through os to find a command
+  * @cmd: command to search for
+  * @linkedlist_path: path to search through
+  * Return: String to absolute path if found, NULL if not
   */
-int main(int ac, char *av[])
+char *search_os(char *cmd, env_t *linkedlist_path)
 {
-	char *path;
-	if (ac != 2)
-		perror("Usage: ./a.out <command_to_find>"), exit(100);
-	path = search_os(av[1]);
-	if (path)
-		printf("%s\n", path);
-	else
-		printf("Did not find command\n");
-	return (0);
+	int status;
+	char *abs_path;
+	env_t *ep;
+
+	ep = linkedlist_path;
+	if (ep == NULL || cmd == NULL)
+		return (NULL);
+	if ((_strncmp(cmd, "/", 1) == 0
+			|| _strncmp(cmd, "./", 2) == 0)
+			&& access(cmd, F_OK | X_OK) == 0)
+	{
+		abs_path = _strdup(cmd);
+		return (abs_path);
+	}
+	while (ep != NULL)
+	{
+		abs_path = _strdup(ep->str);
+		if (abs_path == NULL)
+			return (NULL);
+		abs_path = _strcat_realloc(abs_path, cmd);
+		if (abs_path == NULL)
+			return (NULL);
+		status = access(abs_path, F_OK | X_OK);
+		if (status == 0)
+			return (abs_path);
+		free(abs_path);
+		ep = ep->next;
+	}
+	return (NULL);
 }
